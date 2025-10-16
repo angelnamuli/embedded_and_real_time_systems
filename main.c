@@ -1,46 +1,53 @@
+/*
+ * serial_comm_withLED.c
+ *
+ * Created: 10/16/2025 5:51:24 PM
+ * Author : ANGELREBECCA1
+ */ 
+
 #include <avr/io.h>
-#include <util/delay.h>
+#define F_CPU 4000000UL
+
 
 int main(void)
 {
-	DDRE = 0xff;
-	DDRF = 0xff;
-
-	while (1)
-	{
-		uint8_t seg_digits[10] = {
-			0b11000000, // 0
-			0b11111001, // 1
-			0b10100100, // 2
-			0b10110000, // 3
-			0b10011001, // 4
-			0b10010010, // 5
-			0b10000010, // 6
-			0b11111000, // 7
-			0b10000000, // 8
-			0b10010000  // 9
-		};
-
-		for (int i = 0; i <= 9; i++) {
-			for (int j = 0; j <= 9; j++) {
-
-				// repeat the fast switching many times so both digits appear steady
-				for (int k = 0; k < 100; k++) {
-					
-					// --- Left digit (tens) ---
-					PORTF = 0x00;             // both off
-					PORTE = seg_digits[i];
-					PORTF = 0x01;             // enable left (CA1)
-					_delay_ms(2);
-
-					// --- Right digit (ones) ---
-					PORTF = 0x00;             // both off
-					PORTE = seg_digits[j];
-					PORTF = 0x02;             // enable right (CA2)
-					_delay_ms(2);
-				}
-			}
-		}
+	UBRRH = 0x00;
+	UBRRL = 0x19;
+	DDRC = 0xff;
+	unsigned char instruction[] = "Enter a number";
+	UCSRC |= (1<<4) | (1<<5); //odd parity
+	UCSRC |= (1<<1) | (1<<2); //8 bit size
+	UCSRB |= (1<<TXEN) | (1<<RXEN); // initializing TX and RX pins for serial communication
+	
+	//Transmission
+	for (int i=0;i <=14; i++){
+		while ((UCSRA & (1<<UDRE))==0);
+				UDR = instruction[i];
 	}
-	return 0;
+	
+	
+    /* Replace with your application code */
+    while (1) 
+    { //receiving and LED logic
+		while ((UCSRA &(1<<RXC))==0);
+			char res = UDR;
+			
+			//controlling LED
+			if (res == '0'){
+				PORTC = (1<<PC0);
+			}
+			
+			if (res == '1'){
+				PORTC = (1<<PC1);	
+			}
+			
+			if (res == '2'){
+				PORTC = (1<<PC2);
+			}
+			
+			if (res == '3'){
+				PORTC = (1<<PC3);
+			}
+    }
 }
+
