@@ -1,52 +1,66 @@
 /*
- * serial_comm_with_LEDChat.c
+ * lcd_reverse.c
  *
- * Created: 12/3/2025 3:02:57 PM
+ * Created: 12/3/2025 8:40:27 PM
  * Author : ANGELREBECCA1
  */ 
 
 #include <avr/io.h>
+#include <util/delay.h>
+unsigned char msg[] = "Welcome";
+void latch(void);
+void write_msg();
 
+void latch(){
+	PORTE |=(1<<PE5);
+	_delay_ms(100);
+	PORTE &= ~(1<<PE5);
+	_delay_ms(100);
+}
 
+void write_msg(){
+	PORTE &= ~(1<<PE3);
+	PORTF = 0xC0;
+	latch();
+	PORTE |=(1<<PE3);
+	for(int i=6; i>=0;i--){
+		PORTF = msg[i];
+		latch();
+	}
+	
+}
 int main(void)
 {
-	DDRC = 0xff; // LEDs are output
-	unsigned char instruction[] = "Welcome to USART test";
+	DDRE = 0xff;
+	DDRF = 0xff; 
 	
-	UBRRH = 0x00;
-	UBRRL = 0x19;
-	UCSRB |= (1<<TXEN)|(1<<RXEN); //configure Rx and Tx for serial comm
-	UCSRC = (1<<URSEL); 
-	UCSRC |= (1<<2)|(1<<1); //8 bit character size
-	UCSRC |= (1<<5);//even parity
-	UCSRC &=~(1<<4); //even parity
-	UCSRC &= ~(1<<3); // 1 stop bit
 	
-	//transmission
-	for(int i=0;i<21;i++){
-		while ((UCSRA & (1<<5))==0);
-		UDR = instruction[i]; //pick instruction at given index
-	}
+	
+		PORTE &= ~(1<<PE3); // command mode
+		latch();
+		//clear screen
+		PORTF = 0x01;
+		latch();
+		
+		PORTF = 0x38;           // Function set: 8-bit, 2 lines, 5x7
+		latch();
+
+		PORTF = 0x0F;           // Display ON, cursor ON, blink
+		latch();
+		
+		PORTF = 0x06;           // Entry mode: increment, no shift
+		latch();
+		write_msg();
+		
+		// Turn on display and Blink cursor
+		PORTF= 0b00001111;
+		latch();
+	
 	
     /* Replace with your application code */
     while (1) 
     {
-		//receiving
-		while ((UCSRA & (1<<RXC))==0);
-		char rec = UDR;
 		
-		//controlling LEDs
-		if(rec =='0'){
-			PORTC = (1<<PC0);
-		}
-		
-		if(rec =='1'){
-			PORTC = (1<<PC1);
-		}
-		
-		if(rec =='2'){
-			PORTC = (1<<PC2);
-		}
     }
 }
 
