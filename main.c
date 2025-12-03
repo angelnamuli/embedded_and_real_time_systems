@@ -1,92 +1,52 @@
 /*
- * end_sem_keypad_7seg.c
+ * serial_comm_with_LEDChat.c
  *
- * Created: 11/27/2025 6:47:49 PM
+ * Created: 12/3/2025 3:02:57 PM
  * Author : ANGELREBECCA1
  */ 
 
 #include <avr/io.h>
 
+
 int main(void)
 {
-	DDRD = 0b00001111; //(PD0-PD3 are outputs on decoder)
-	DDRF = 0b11111000; //(PF3-PF6, outputs(rows), PF0-PF2, inputs(columns))
+	DDRC = 0xff; // LEDs are output
+	unsigned char instruction[] = "Welcome to USART test";
+	
+	UBRRH = 0x00;
+	UBRRL = 0x19;
+	UCSRB |= (1<<TXEN)|(1<<RXEN); //configure Rx and Tx for serial comm
+	UCSRC = (1<<URSEL); 
+	UCSRC |= (1<<2)|(1<<1); //8 bit character size
+	UCSRC |= (1<<5);//even parity
+	UCSRC &=~(1<<4); //even parity
+	UCSRC &= ~(1<<3); // 1 stop bit
+	
+	//transmission
+	for(int i=0;i<21;i++){
+		while ((UCSRA & (1<<5))==0);
+		UDR = instruction[i]; //pick instruction at given index
+	}
+	
     /* Replace with your application code */
     while (1) 
     {
+		//receiving
+		while ((UCSRA & (1<<RXC))==0);
+		char rec = UDR;
 		
-		PORTF = 0b11110111; //Row A low(PF3=0), others high
-		//button 1
-		if ((PINF & 0b00000001)==0){
-			PORTD = 1;
-			while((PINF & 0b00000001)==0);
+		//controlling LEDs
+		if(rec =='0'){
+			PORTC = (1<<PC0);
 		}
 		
-		//button 2
-		PORTF = 0b11110111; //Row A low(PF3=0), others high
-		if ((PINF & 0b00000010)==0){
-			PORTD = 2;
-			while((PINF & 0b00000010)==0);
+		if(rec =='1'){
+			PORTC = (1<<PC1);
 		}
 		
-		//button 3
-		PORTF = 0b11110111; //Row A low(PF3=0), others high
-		if ((PINF & 0b00000100)==0){
-			PORTD = 3;
-			while((PINF & 0b00000100)==0);
+		if(rec =='2'){
+			PORTC = (1<<PC2);
 		}
-		
-		//button 4
-		PORTF = 0b11101111; //row B(PF4=0), others high
-		if ((PINF &(1<<0))==0){
-			PORTD = 4;
-			while ((PINF &(1<<0))==0);
-		}
-		
-		//button 5
-		PORTF = 0b11101111; //row B(PF4=0), others high
-		if ((PINF &(1<<1))==0){
-			PORTD = 5;
-			while ((PINF &(1<<1))==0);
-		}
-		
-		//button 6
-		PORTF = 0b11101111; //row B(PF4=0), others high
-		if ((PINF &(1<<2))==0){
-			PORTD = 6;
-			while ((PINF &(1<<2))==0);
-		}
-		
-		//button 7
-		PORTF = 0b11011111; //row C(PF5=0), others high
-		if ((PINF &(1<<0))==0){
-			PORTD = 7;
-			while ((PINF &(1<<0))==0);
-		}
-		
-		//button 8
-		PORTF = 0b11011111; //row C(PF5=0), others high
-		if ((PINF &(1<<1))==0){
-			PORTD = 8;
-			while ((PINF &(1<<1))==0);
-		}
-		
-		//button 9
-		PORTF = 0b11011111; //row C(PF5=0), others high
-		if ((PINF &(1<<2))==0){
-			PORTD = 9;
-			while ((PINF &(1<<2))==0);
-		}
-		
-		//button 0
-		PORTF = 0b10111111; //row D low(PF6), others high
-		if ((PINF & (1<<1))==0){
-			PORTD = 0;
-			while ((PINF & (1<<1))==0);
-		}
-		
-		}
-		
     }
-
+}
 
